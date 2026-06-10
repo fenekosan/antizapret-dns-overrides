@@ -37,10 +37,10 @@ emit_rules() {
 		while read -r domain addrs; do
 			[[ -z "${domain:-}" || "$domain" == \#* ]] && continue
 			domain="${domain,,}"
-			[[ "$domain" =~ ^[a-z0-9.-]+$ ]] || { echo "-- skip invalid bind domain: $domain"; continue; }
+			[[ "$domain" =~ ^[a-z0-9.-]+$ ]] || { echo "-- пропущен некорректный домен (bind): $domain"; continue; }
 			rdata=''
 			for ip in ${addrs//,/ }; do is_ipv4 "$ip" && rdata+="kres.str2ip('$ip'),"; done
-			[[ -z "$rdata" ]] && { echo "-- skip bind without valid IP: $domain"; continue; }
+			[[ -z "$rdata" ]] && { echo "-- пропущен bind без валидного IP: $domain"; continue; }
 			echo "policy.add(policy.suffix(policy.ANSWER({[kres.type.A] = {rdata = {${rdata%,}}, ttl = 300}}), policy.todnames({'$domain'})))"
 		done < "$file"
 	done
@@ -50,10 +50,10 @@ emit_rules() {
 		while read -r domain addrs; do
 			[[ -z "${domain:-}" || "$domain" == \#* ]] && continue
 			domain="${domain,,}"
-			[[ "$domain" =~ ^[a-z0-9.-]+$ ]] || { echo "-- skip invalid upstream domain: $domain"; continue; }
+			[[ "$domain" =~ ^[a-z0-9.-]+$ ]] || { echo "-- пропущен некорректный домен (upstream): $domain"; continue; }
 			rdata=''
 			for ip in ${addrs//,/ }; do is_ipv4 "$ip" && rdata+="'$ip',"; done
-			[[ -z "$rdata" ]] && { echo "-- skip upstream without valid resolver: $domain"; continue; }
+			[[ -z "$rdata" ]] && { echo "-- пропущен upstream без валидного резолвера: $domain"; continue; }
 			echo "policy.add(policy.suffix(policy.FORWARD({${rdata%,}}), policy.todnames({'$domain'})))"
 		done < "$file"
 	done
@@ -95,9 +95,9 @@ if [[ -f "$KRESD_CONF" ]] && ! grep -q "$MARK" "$KRESD_CONF"; then
 		cp -f "$KRESD_CONF" "$KRESD_CONF.bak.$(date +%Y%m%d-%H%M%S)"
 		install -m 0644 "$TMP_CONF" "$KRESD_CONF"
 		changed=1
-		echo "custom-dns: injected dofile into $KRESD_CONF"
+		echo "custom-dns: dofile внедрён в $KRESD_CONF"
 	else
-		echo "custom-dns: WARNING — FLAGS anchor not found in $KRESD_CONF, custom.lua NOT wired" >&2
+		echo "custom-dns: ВНИМАНИЕ — якорь FLAGS не найден в $KRESD_CONF, custom.lua НЕ подключён" >&2
 	fi
 	rm -f "$TMP_CONF"
 fi
@@ -105,9 +105,9 @@ fi
 # 3) Reload kresd only on change
 if [[ "$changed" -eq 1 ]]; then
 	systemctl reload-or-restart kresd@1 kresd@2 2>/dev/null || systemctl restart kresd@1 kresd@2 2>/dev/null || true
-	echo "custom-dns: applied $(grep -c '^policy.add' "$CUSTOM_LUA" 2>/dev/null || echo 0) rule(s), kresd reloaded"
+	echo "custom-dns: применено $(grep -c '^policy.add' "$CUSTOM_LUA" 2>/dev/null || echo 0) правил(а), kresd перезагружен"
 else
-	echo "custom-dns: no changes"
+	echo "custom-dns: изменений нет"
 fi
 
 exit 0

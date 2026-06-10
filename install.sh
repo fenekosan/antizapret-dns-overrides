@@ -15,8 +15,8 @@ AZ_DIR=/root/antizapret
 CONF_DIR="$AZ_DIR/config"
 HOOK="$AZ_DIR/custom-doall.sh"
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Run as root (sudo ./install.sh)"; exit 1; }
-[[ -d "$AZ_DIR" ]] || { echo "AntiZapret not found at $AZ_DIR — is this an AntiZapret-VPN server?"; exit 1; }
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Запустите от root (sudo ./install.sh)"; exit 1; }
+[[ -d "$AZ_DIR" ]] || { echo "AntiZapret не найден в $AZ_DIR — это точно сервер AntiZapret-VPN?"; exit 1; }
 
 # Local source dir when run from a clone; empty when piped via wget/curl.
 SRC=''
@@ -34,7 +34,7 @@ dl() {  # dl <url> -> stdout
 	elif command -v curl >/dev/null 2>&1; then
 		curl -fsSL --connect-timeout 30 "$1"
 	else
-		echo "Neither wget nor curl found" >&2; return 1
+		echo "Не найден ни wget, ни curl" >&2; return 1
 	fi
 }
 
@@ -45,22 +45,22 @@ resolve() {
 		RESOLVED="$SRC/$rel"; return 0
 	fi
 	RESOLVED="$(mktemp)"; TMPS+=("$RESOLVED")
-	dl "$REPO_RAW/$rel" > "$RESOLVED" && [[ -s "$RESOLVED" ]] || { echo "Failed to fetch $rel" >&2; return 1; }
+	dl "$REPO_RAW/$rel" > "$RESOLVED" && [[ -s "$RESOLVED" ]] || { echo "Не удалось скачать $rel" >&2; return 1; }
 }
 
 # 1) Worker script
 resolve custom-dns.sh
 install -m 0755 "$RESOLVED" "$AZ_DIR/custom-dns.sh"
-echo "installed: $AZ_DIR/custom-dns.sh"
+echo "установлено: $AZ_DIR/custom-dns.sh"
 
 # 2) Config files — never overwrite a user's existing ones
 for f in custom-bind.txt custom-upstream.txt; do
 	if [[ -f "$CONF_DIR/$f" ]]; then
-		echo "kept existing: $CONF_DIR/$f"
+		echo "оставлен существующий: $CONF_DIR/$f"
 	else
 		resolve "config/$f"
 		install -m 0644 "$RESOLVED" "$CONF_DIR/$f"
-		echo "created: $CONF_DIR/$f"
+		echo "создан: $CONF_DIR/$f"
 	fi
 done
 
@@ -68,18 +68,18 @@ done
 [[ -f "$HOOK" ]] || printf '#!/bin/bash\n' > "$HOOK"
 chmod +x "$HOOK"
 if grep -q 'custom-dns.sh' "$HOOK"; then
-	echo "hook already present: $HOOK"
+	echo "хук уже установлен: $HOOK"
 else
 	printf '\n# antizapret-dns-overrides hook\n[ -x %s/custom-dns.sh ] && %s/custom-dns.sh "$1" || true\n' "$AZ_DIR" "$AZ_DIR" >> "$HOOK"
-	echo "hooked into: $HOOK"
+	echo "хук добавлен в: $HOOK"
 fi
 
 # 4) Apply now
 echo "---"
 "$AZ_DIR/custom-dns.sh" "${1:-}"
 echo "---"
-echo "Done."
-echo "Edit your overrides:"
-echo "  $CONF_DIR/custom-upstream.txt   (домен -> свой DNS-резолвер)"
+echo "Готово."
+echo "Редактируйте свои оверрайды:"
 echo "  $CONF_DIR/custom-bind.txt       (домен -> фиксированный IP)"
-echo "Then apply with:  $AZ_DIR/custom-dns.sh   (or the regular $AZ_DIR/doall.sh)"
+echo "  $CONF_DIR/custom-upstream.txt   (домен -> свой DNS-резолвер)"
+echo "Затем примените:  $AZ_DIR/custom-dns.sh   (или обычный $AZ_DIR/doall.sh)"

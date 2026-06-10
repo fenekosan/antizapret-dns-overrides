@@ -7,7 +7,7 @@ set -u
 AZ_DIR=/root/antizapret
 KRESD_CONF=/etc/knot-resolver/kresd.conf
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Run as root (sudo ./uninstall.sh)"; exit 1; }
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Запустите от root (sudo ./uninstall.sh)"; exit 1; }
 
 # Remove the hook line from custom-doall.sh
 if [[ -f "$AZ_DIR/custom-doall.sh" ]]; then
@@ -23,4 +23,4 @@ rm -f "$AZ_DIR/custom-dns.sh" /etc/knot-resolver/custom.lua
 
 systemctl reload-or-restart kresd@1 kresd@2 2>/dev/null || true
 
-echo "Uninstalled. Left intact: $AZ_DIR/config/custom-bind.txt, $AZ_DIR/config/custom-upstream.txt"
+echo "Удалено. Оставлены без изменений: $AZ_DIR/config/custom-bind.txt, $AZ_DIR/config/custom-upstream.txt"
